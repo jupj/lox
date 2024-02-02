@@ -51,7 +51,7 @@ class Parser {
 
     private Stmt printStatement() {
         Expr value = expression();
-        consume(SEMICOLON, "Expect ',' after value.");
+        consume(SEMICOLON, "Expect ';' after value.");
         return new Stmt.Print(value);
     }
 
@@ -69,7 +69,7 @@ class Parser {
 
     private Stmt expressionStatement() {
         Expr value = expression();
-        consume(SEMICOLON, "Expect ',' after value.");
+        consume(SEMICOLON, "Expect ';' after value.");
         return new Stmt.Expression(value);
     }
 
