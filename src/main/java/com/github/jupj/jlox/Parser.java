@@ -9,10 +9,17 @@ class Parser {
     private static class ParseError extends RuntimeException {}
 
     private final List<Token> tokens;
+    private final boolean printExpr;
     private int current = 0;
 
     Parser(List<Token> tokens) {
         this.tokens = tokens;
+        this.printExpr = false;
+    }
+
+    Parser(List<Token> tokens, boolean printExpressions) {
+        this.tokens = tokens;
+        this.printExpr = printExpressions;
     }
 
     List<Stmt> parse() {
@@ -69,7 +76,13 @@ class Parser {
 
     private Stmt expressionStatement() {
         Expr value = expression();
-        consume(SEMICOLON, "Expect ';' after value.");
+        if (!match(SEMICOLON)) {
+            if (printExpr && isAtEnd()) {
+                return new Stmt.Print(value);
+            }
+            throw error(peek(), "Expect ';' after value.");
+        }
+
         return new Stmt.Expression(value);
     }
 
