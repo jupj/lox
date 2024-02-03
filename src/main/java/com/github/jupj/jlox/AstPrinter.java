@@ -29,6 +29,15 @@ class AstPrinter implements Expr.Visitor<String>,
     }
 
     @Override
+    public String visitIfStmt(Stmt.If stmt) {
+        if (stmt.elseBranch == null) {
+            return parenthesize("if", stmt.condition, stmt.thenBranch);
+        }
+
+        return parenthesize("if-else", stmt.condition, stmt.thenBranch, stmt.elseBranch);
+    }
+
+    @Override
     public String visitPrintStmt(Stmt.Print stmt) {
         return parenthesize("print", stmt.expression);
     }
@@ -84,6 +93,8 @@ class AstPrinter implements Expr.Visitor<String>,
             builder.append(" ");
             if (part instanceof Expr) {
                 builder.append(((Expr) part).accept(this));
+            } else if (part instanceof Stmt) {
+                builder.append(((Stmt) part).accept(this));
             } else if (part instanceof Token) {
                 builder.append(((Token) part).lexeme);
             } else {
