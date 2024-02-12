@@ -1,6 +1,8 @@
 program         = declaration* EOF ;
-declaration     = varDecl
-                | statement ;
+declaration     = funcDecl | varDecl | statement ;
+funcDecl        = "fun" function ;
+function        = IDENTIFIER "(" parameters? ")" block ;
+parameters      = IDENTIFIER ( "," IDENTIFIER )* ;
 varDecl         = "var" IDENTIFIER ( "=" expression )? ";" ;
 statement       = exprStmt
                 | forStmt

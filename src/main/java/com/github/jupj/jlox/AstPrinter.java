@@ -13,9 +13,10 @@ class AstPrinter implements Expr.Visitor<String>,
     @Override
     public String visitBlockStmt(Stmt.Block stmt) {
         StringBuilder builder = new StringBuilder();
-        builder.append("(block ");
+        builder.append("(block");
 
         for (Stmt statement : stmt.statements) {
+            builder.append(" ");
             builder.append(statement.accept(this));
         }
 
@@ -26,6 +27,30 @@ class AstPrinter implements Expr.Visitor<String>,
     @Override
     public String visitExpressionStmt(Stmt.Expression stmt) {
         return parenthesize(";", stmt.expression);
+    }
+
+    @Override
+    public String visitFunctionStmt(Stmt.Function stmt) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("(fun ");
+        builder.append(stmt.name.lexeme);
+
+        for (Token param : stmt.params) {
+            builder.append(param.lexeme);
+            builder.append(" ");
+        }
+
+        builder.append("(body");
+
+        for (Stmt statement : stmt.body) {
+            builder.append(" ");
+            builder.append(statement.accept(this));
+        }
+
+        builder.append(")");
+        builder.append(")");
+
+        return builder.toString();
     }
 
     @Override
