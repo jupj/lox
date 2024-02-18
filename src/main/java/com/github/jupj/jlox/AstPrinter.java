@@ -118,6 +118,29 @@ class AstPrinter implements Expr.Visitor<String>,
     }
 
     @Override
+    public String visitLambdaExpr(Expr.Lambda expr) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("(fun ");
+
+        for (Token param : expr.params) {
+            builder.append(param.lexeme);
+            builder.append(" ");
+        }
+
+        builder.append("(body");
+
+        for (Stmt statement : expr.body) {
+            builder.append(" ");
+            builder.append(statement.accept(this));
+        }
+
+        builder.append(")");
+        builder.append(")");
+
+        return builder.toString();
+    }
+
+    @Override
     public String visitLiteralExpr(Expr.Literal expr) {
         if (expr.value == null)
             return "nil";

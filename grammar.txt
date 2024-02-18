@@ -30,8 +30,9 @@ equality        = comparison ( ( "!=" | "==" ) comparison )* ;
 comparison      = term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
 term            = factor ( ( "-" | "+" ) factor )* ;
 factor          = unary ( ( "/" | "*" ) unary )* ;
-unary           = ( "!" | "-" ) unary | call ;
+unary           = ( "!" | "-" ) unary | call | lambda;
 call            = primary ( "(" arguments? ")" )* ;
+lambda          = "fun" "(" parameters? ")" block;
 arguments       = expression ( "," expression )* ;
 primary         = NUMBER | STRING | "true" | "false" | "nil"
                 | "(" expression ")"

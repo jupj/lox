@@ -31,8 +31,14 @@ class Parser {
 
     private Stmt declaration() {
         try {
-            if (match(FUN))
+            if (match(FUN)) {
+                if (check(LEFT_PAREN)) {
+                    Expr value = lambda();
+                    consume(SEMICOLON, "Expect ';' after value.");
+                    return new Stmt.Expression(value);
+                }
                 return function("function");
+            }
             if (match(VAR))
                 return varDeclaration();
 
@@ -288,6 +294,10 @@ class Parser {
             return new Expr.Unary(operator, right);
         }
 
+        if (match(FUN)) {
+            return lambda();
+        }
+
         return call();
     }
 
@@ -320,6 +330,26 @@ class Parser {
                 "Expect ')' after arguments.");
 
         return new Expr.Call(callee, paren, arguments);
+    }
+
+    private Expr lambda() {
+        Token fun = previous();
+        consume(LEFT_PAREN, "Expect '(' after lambda 'fun'.");
+
+        List<Token> parameters = new ArrayList<>();
+        if (!check(RIGHT_PAREN)) {
+            do {
+                if (parameters.size() >= 255) {
+                    error(peek(), "Can't have more than 255 parameters.");
+                }
+                parameters.add(
+                        consume(IDENTIFIER, "Expect parameter name."));
+            } while (match(COMMA));
+        }
+        consume(RIGHT_PAREN, "Expect ')' after parameters.");
+        consume(LEFT_BRACE, "Expect '{' before lambda body.");
+        List<Stmt> body = block();
+        return new Expr.Lambda(fun, parameters, body);
     }
 
     private Expr primary() {
