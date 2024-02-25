@@ -58,6 +58,11 @@ public class Lox {
         if (hadError)
             return;
 
+        //AstPrinter printer = new AstPrinter();
+        //for (Stmt stmt : statements) {
+            //System.out.println(printer.print(stmt));
+        //}
+
         Resolver resolver = new Resolver(interpreter);
         resolver.resolve(statements);
 

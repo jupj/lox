@@ -97,6 +97,7 @@ class AstPrinter implements Expr.Visitor<String>,
         builder.append(expr.callee.accept(this));
 
         for (Expr argument : expr.arguments) {
+            builder.append(" ");
             builder.append(argument.accept(this));
         }
 
@@ -174,12 +175,13 @@ class AstPrinter implements Expr.Visitor<String>,
         builder.append("(" + type + " ");
         builder.append(stmt.name.lexeme);
 
+        builder.append("(params");
         for (Token param : stmt.params) {
-            builder.append(param.lexeme);
             builder.append(" ");
+            builder.append(param.lexeme);
         }
 
-        builder.append("(body");
+        builder.append(") (body");
 
         for (Stmt statement : stmt.body) {
             builder.append(" ");
