@@ -25,32 +25,24 @@ class AstPrinter implements Expr.Visitor<String>,
     }
 
     @Override
+    public String visitClassStmt(Stmt.Class stmt) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("(class " + stmt.name.lexeme);
+        for (Stmt.Function method : stmt.methods) {
+            builder.append(" " + function(method, "method"));
+        }
+        builder.append(")");
+        return builder.toString();
+    }
+
+    @Override
     public String visitExpressionStmt(Stmt.Expression stmt) {
         return parenthesize(";", stmt.expression);
     }
 
     @Override
     public String visitFunctionStmt(Stmt.Function stmt) {
-        StringBuilder builder = new StringBuilder();
-        builder.append("(fun ");
-        builder.append(stmt.name.lexeme);
-
-        for (Token param : stmt.params) {
-            builder.append(param.lexeme);
-            builder.append(" ");
-        }
-
-        builder.append("(body");
-
-        for (Stmt statement : stmt.body) {
-            builder.append(" ");
-            builder.append(statement.accept(this));
-        }
-
-        builder.append(")");
-        builder.append(")");
-
-        return builder.toString();
+        return function(stmt, "fun");
     }
 
     @Override
@@ -113,6 +105,11 @@ class AstPrinter implements Expr.Visitor<String>,
     }
 
     @Override
+    public String visitGetExpr(Expr.Get expr) {
+        return parenthesize(".", expr.object, expr.name);
+    }
+
+    @Override
     public String visitGroupingExpr(Expr.Grouping expr) {
         return parenthesize("group", expr.expression);
     }
@@ -127,6 +124,18 @@ class AstPrinter implements Expr.Visitor<String>,
     @Override
     public String visitLogicalExpr(Expr.Logical expr) {
         return parenthesize(expr.operator.lexeme, expr.left, expr.right);
+    }
+
+    @Override
+    public String visitSetExpr(Expr.Set expr) {
+        return parenthesize("=",
+                parenthesize(".", expr.object, expr.name),
+                expr.value);
+    }
+
+    @Override
+    public String visitThisExpr(Expr.This expr) {
+        return expr.keyword.lexeme;
     }
 
     @Override
@@ -155,6 +164,29 @@ class AstPrinter implements Expr.Visitor<String>,
                 builder.append(part);
             }
         }
+        builder.append(")");
+
+        return builder.toString();
+    }
+
+    private String function(Stmt.Function stmt, String type) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("(" + type + " ");
+        builder.append(stmt.name.lexeme);
+
+        for (Token param : stmt.params) {
+            builder.append(param.lexeme);
+            builder.append(" ");
+        }
+
+        builder.append("(body");
+
+        for (Stmt statement : stmt.body) {
+            builder.append(" ");
+            builder.append(statement.accept(this));
+        }
+
+        builder.append(")");
         builder.append(")");
 
         return builder.toString();
