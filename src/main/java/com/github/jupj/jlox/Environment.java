@@ -25,7 +25,7 @@ class Environment {
         }
 
         throw new RuntimeError(name,
-                "Undefined variable'" + name.lexeme + "'.");
+                "Undefined variable '" + name.lexeme + "'.");
     }
 
     void assign(Token name, Object value) {
