@@ -6,8 +6,9 @@ expected() {
 
     < "$testfile" grep "//" \
         | sed 's/.*\/\/\s*//' \
-        | grep -E '^(expect:|\[)' \
+        | grep -E '^(expect:|expect runtime error:|\[|Error at)' \
         | sed 's/^expect:\s*//' \
+        | sed 's/^expect runtime error:\s*//' \
         | sed 's/^\[java /[/'
 }
 
@@ -16,12 +17,17 @@ testloxfile() {
     testfile=$1
 
     expectedOut=$(expected "$testfile")
-    expectError=$(echo "$expectedOut" | grep -E '^\[')
+    # remove clox errors:
+    expectedOut=$(echo "$expectedOut" | grep -E -v '\[c line')
+
+    expectError=$(grep -E "expect runtime error|\[|Error at" "$testfile") #echo "$expectedOut" | grep -E '^(\[|Error at)')
 
     echo -n "Testing $testfile ..."
 
     out=$(java -jar target/jlox-1.0-SNAPSHOT.jar "$testfile" 2>&1)
     code=$?
+    out=$(echo "$out" | sed -E 's/\[line [0-9]+\]\s*//')
+    expectedOut=$(echo "$expectedOut" | sed -E 's/\[line [0-9]+\]\s*//')
 
     testerr=$(
         if [ "$out" != "$expectedOut" ]; then
@@ -44,13 +50,29 @@ testloxfile() {
 
     if [ "$testerr" = "" ]; then
         echo "OK"
+        return 0
     else
-        echo "" # Add end of line
+        echo "FAIL"
         echo "$testerr"
+        return 1
     fi
 }
 
-testloxfile "../craftinginterpreters/test/empty_file.lox"
-testloxfile "../craftinginterpreters/test/precedence.lox"
-testloxfile "../craftinginterpreters/test/unexpected_character.lox"
-testloxfile "../craftinginterpreters/test/operator/not.lox"
+testfiles=$(ls craftinginterpreters-test/*.lox; ls craftinginterpreters-test/*/*.lox)
+nOK=0
+nFAIL=0
+nSKIP=0
+for testfile in $testfiles; do
+    if [[ "$testfile" =~ benchmark|scanning|limit|parse.lox|evaluate.lox ]]; then
+        ((nSKIP++))
+        echo "Skip $testfile"
+        continue
+    fi
+
+    if testloxfile "$testfile"; then
+        ((nOK++))
+    else
+        ((nFAIL++))
+    fi
+done
+echo "Total: $nOK OK, $nFAIL failed, $nSKIP skipped"
