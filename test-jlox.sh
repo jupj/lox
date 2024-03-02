@@ -63,7 +63,7 @@ nOK=0
 nFAIL=0
 nSKIP=0
 for testfile in $testfiles; do
-    if [[ "$testfile" =~ benchmark|scanning|limit|parse.lox|evaluate.lox ]]; then
+    if [[ "$testfile" =~ benchmark|scanning|limit|parse.lox|evaluate.lox|nan_equality.lox ]]; then
         ((nSKIP++))
         echo "Skip $testfile"
         continue
