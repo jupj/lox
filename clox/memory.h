@@ -15,4 +15,6 @@
 
 void* reallocate(void* pointer, size_t oldSize, size_t newSize);
 
+void testmem();
+
 #endif // clox_memory_h

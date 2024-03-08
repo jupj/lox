@@ -1,9 +1,13 @@
 #include "common.h"
 #include "chunk.h"
 #include "debug.h"
+#include "memory.h"
 
 int main(int argc, const char* argv[])
 {
+    // Test the custom memory allocator:
+    testmem();
+
     Chunk chunk;
     initChunk(&chunk);
 
