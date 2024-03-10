@@ -3,11 +3,14 @@
 #include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdio.h>
+#include <stdalign.h>
 
 #include "memory.h"
 
 // mem_header precedes each allocated memory block
 typedef struct mem_header {
+    uintptr_t pad;
     struct mem_header *next;
     size_t size;
     bool in_use;
@@ -18,7 +21,9 @@ typedef struct mem_header {
 mem_header *head = NULL, *tail = NULL;
 
 // mem_alloc allocates memory blocks, or reuses freed blocks.
-// The returned memory block is zeroed.
+// The returned memory block is zeroed and it is 8-byte aligned.
+// The caller is responsible for aligning user data that needs larger
+// alignment.
 static void *mem_alloc(size_t size)
 {
     // Look for a free memory block
@@ -30,14 +35,27 @@ static void *mem_alloc(size_t size)
         }
     }
 
-    // Allocate a new memory block:
-    void *res = sbrk(sizeof(mem_header) + size);
+    // Calculate alignment, minimum 8 bytes:
+    size_t align = alignof(mem_header) < 8 ? 8 : alignof(mem_header);
+
+    // Allocate a new memory block, include padding bytes to ensure alignment:
+    size_t block_size = sizeof(mem_header) + size + align - 1;
+    void *res = sbrk(block_size);
     if (res == (void *)-1) {
         exit(1);
     }
 
+    // Calculate padding to align the mem_header
+    uintptr_t pad = 0;
+    if ((uintptr_t)res % align != 0) {
+        pad = align - ((uintptr_t)res % align);
+    }
+    // Extend size to cover the rest of the padding bytes
+    size = block_size - pad - sizeof(mem_header);
+
     // Initialize the new memory block
-    mem_header *hdr = (mem_header *)res;
+    mem_header *hdr = (mem_header *)(res + pad);
+    hdr->pad = pad;
     hdr->next = NULL;
     hdr->size = size;
     hdr->in_use = true;
@@ -82,9 +100,9 @@ static void mem_free(void *block)
         // This and the next block are free.
         // Merge them if they are contiguous.
         void *end = (char *)(curr + 1) + curr->size;
-        if (end == (void *)curr->next) {
+        if (end == (void *)((uintptr_t)curr->next - curr->next->pad)) {
             mem_header *merged = curr->next;
-            curr->size += sizeof(mem_header) + merged->size;
+            curr->size += merged->pad + sizeof(mem_header) + merged->size;
             curr->next = merged->next;
             if (tail == merged) {
                 tail = curr;
@@ -104,7 +122,7 @@ static void mem_free(void *block)
     }
 
     if (((char*)(tail + 1) + tail->size) == prog_brk) {
-        void *res = sbrk(-sizeof(mem_header) - tail->size);
+        void *res = sbrk(-tail->pad - sizeof(mem_header) - tail->size);
         if (res == (void*)-1) {
             // ???
             exit(1);
@@ -155,7 +173,7 @@ static size_t memusage()
 
     size_t tot = 0;
     for (mem_header *hdr = head; hdr; hdr = hdr->next) {
-        tot += sizeof(mem_header) + hdr->size;
+        tot += hdr->pad + sizeof(mem_header) + hdr->size;
     }
     return tot;
 }
@@ -166,20 +184,32 @@ void testmem()
     size_t mem_start = memusage();
 
     void *foo = reallocate(NULL, 0, 10);
+    fprintf(stderr, "Memusage: %zu\n", memusage());
     void *bar = reallocate(NULL, 0, 20);
+    fprintf(stderr, "Memusage: %zu\n", memusage());
     void *moo = reallocate(NULL, 0, 40);
+    fprintf(stderr, "Memusage: %zu\n", memusage());
     reallocate(moo, 10, 0);
+    fprintf(stderr, "Memusage: %zu\n", memusage());
     reallocate(bar, 10, 0);
+    fprintf(stderr, "Memusage: %zu\n", memusage());
     reallocate(foo, 10, 0);
+    fprintf(stderr, "Memusage: %zu\n", memusage());
 
     assert(memusage() == mem_start);
 
     foo = reallocate(NULL, 0, 10);
+    fprintf(stderr, "Memusage: %zu\n", memusage());
     bar = reallocate(NULL, 0, 20);
+    fprintf(stderr, "Memusage: %zu\n", memusage());
     moo = reallocate(NULL, 0, 40);
+    fprintf(stderr, "Memusage: %zu\n", memusage());
     reallocate(foo, 10, 0);
+    fprintf(stderr, "Memusage: %zu\n", memusage());
     reallocate(bar, 10, 0);
+    fprintf(stderr, "Memusage: %zu\n", memusage());
     reallocate(moo, 10, 0);
+    fprintf(stderr, "Memusage: %zu\n", memusage());
 
     assert(memusage() == mem_start);
 }
